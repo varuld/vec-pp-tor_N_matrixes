@@ -92,34 +92,30 @@ public:
   {
   // starts chech from back of vector, then if index exist already, then insert values
 	assert(index <= sizeTot); // cant write outside scope of vector
-
-    if (index <= *mIndex.end()) // is index last vlue in mIndex vector?
+	int lenght_of_mIndex = std::distance(mIndex.begin(), mIndex.end() );
+    if (index <= lenght_of_mIndex ) // is index last vlue in mIndex vector?
     {
-      if (*mIndex.end() == index)
+      if ( lenght_of_mIndex == index)
   	  {
   			mData[index] = value;
   	  }
 
     	else // find iterator that is or is hihger than 'index'
     	{
-    		auto p_indx_ref{ std::lower_bound(mIndex.begin(), mIndex.end(), index) }; // pointer to mIndex[index] with eq. or lower 'val' than index
-				auto PlacementOfValue{ *p_indx_ref };
-
-				int indx_ref2 = p_indx_ref - mIndex.begin(); // index number to place values at
-				// indx_ref2 gives number since both p_indx_ref and mIndex.begin()
-				// are iterator's
-
+    		auto it_indx_ref = std::lower_bound(mIndex.begin(), mIndex.end(), index); // iterator to mIndex[index] with eq. or lower 'val' than index
+				int PlacementOfValue = std::distance(mIndex.begin(),it_indx_ref);
+				std::vector<T>::iterator Placement_Offset_I = mIndex.begin() + std::distance(mIndex.begin(),it_indx_ref);
+				//std::vector<T>::iterator Placement_Offset_D = mData.begin() + PlacementOfValue;
 
     		if ( PlacementOfValue == index ) // if iterator=index, write value to correfponding indexing in mData
     		{
-    			mData[indx_ref2] = value;
+    			mData[PlacementOfValue] = value;
     		}
     		else // if iterator > index, insert index at place before iterator in mIndex (same with mData and value)
-    		{
-					mData.insert(*p_indx_ref, value);
-    			mIndex.insert(p_indx_ref, index);
-
-    			sizeTot +=1;
+				{
+    			mIndex.insert(Placement_Offset_I, index);
+					//mData.insert(Placement_Offset_D, value);
+    			// sizeTot +=1;
     		}
 
     	}
@@ -132,7 +128,7 @@ public:
   	    //addSizeTotal();
     }
   }
-/*
+
 	//returns the value v_i of the vector. Returns 0 if the value is not stored
 	T getValue(unsigned int index)const
 	{
@@ -144,8 +140,8 @@ public:
 		// which gives right value bq we know index exixts
 		if  (index_exists)
 		{
-			auto p_val_indx { std::lower_bound(mIndex.begin(), mIndex.end(), index) };
-			int PlacementOfValue{ *p_val_indx };
+			auto it_val_indx { std::lower_bound(mIndex.begin(), mIndex.end(), index) };
+			int PlacementOfValue = std::distance(mIndex.begin(), it_val_indx);
 
 			return mData[PlacementOfValue];
 		}
@@ -161,12 +157,13 @@ public:
 	int getIndex(int is_index_this) const
 	{
 		bool indx_match{ binary_search(mIndex.begin(), mIndex.end(), is_index_this) };
-		auto p_indx{ std::lower_bound(mIndex.begin(), mIndex.end(), is_index_this) };
+		auto it_indx{ std::lower_bound(mIndex.begin(), mIndex.end(), is_index_this) };
+		int indx_place = std::distance(mIndex.begin(), it_indx);
 
 	 // bool no_match = (idx == mIndex.end() && *idx != is_index_this);
 		if (indx_match)
 		{
-			return *p_indx;
+			return indx_place;
 		}
 		else
 		{
@@ -218,6 +215,7 @@ public:
 			// checks if x' ith index exists in c_v
 			int x_indx{ x.mIndex[i] };
 			bool indx_findes = std::binary_search(mIndex.begin(), mIndex.end(), x_indx);
+
 			// auto idx_exixts = std::lower_bound(mIndex.begin(), mIndex.end(), x.mIndex[i]);
 
 			// bool checks if, given pointer to end of org.vector, it's a match
@@ -227,8 +225,8 @@ public:
 			// and writes to org.vector
 			if (indx_findes)
 			{
-				auto  p_indexOfIndexMatch{ std::lower_bound(mIndex.begin(), mIndex.end(), x_indx) };
-				int PlacementOfValue{ *p_indexOfIndexMatch };
+				auto  it_indexOfIndexMatch{ std::lower_bound(mIndex.begin(), mIndex.end(), x_indx) };
+				int PlacementOfValue = std::distance(mIndex.begin(),it_indexOfIndexMatch);
 
 				T valueNew{ mData[PlacementOfValue] + x.mData[i] };
 				setValue(PlacementOfValue, valueNew);
@@ -270,8 +268,8 @@ public:
 			// and writes to org.vector
 			if (indx_findes)
 			{
-				auto p_indexOfIndexMatch{ std::lower_bound(mIndex.begin(), mIndex.end(), x_indx) };
-				int PlacementOfValue{ *p_indexOfIndexMatch };
+				auto it_indexOfIndexMatch{ std::lower_bound(mIndex.begin(), mIndex.end(), x_indx) };
+				int PlacementOfValue = std::distance(mIndex.begin(), it_indexOfIndexMatch);
 				T valueNew{ mData[PlacementOfValue] - x.mData[i] };
 				setValue(PlacementOfValue, valueNew);
 			}
@@ -286,7 +284,6 @@ public:
 			}
 		}
 	}
-	*/
 };
 
 /*
