@@ -90,44 +90,42 @@ public:
 
 	void setValue(unsigned int index, T value) // set or add value at given index
   {
-  // starts chech from back of vector, then if index exist already, then insert values
-	assert(index <= sizeTot); // cant write outside scope of vector
-	int lenght_of_mIndex = std::distance(mIndex.begin(), mIndex.end() );
-    if (index <= lenght_of_mIndex ) // is index last vlue in mIndex vector?
-    {
-      if ( lenght_of_mIndex == index)
-  	  {
-  			mData[index] = value;
-  	  }
 
-    	else // find iterator that is or is hihger than 'index'
-    	{
-    		auto it_indx_ref = std::lower_bound(mIndex.begin(), mIndex.end(), index); // iterator to mIndex[index] with eq. or lower 'val' than index
-				int PlacementOfValue = std::distance(mIndex.begin(),it_indx_ref);
-				std::vector<T>::iterator Placement_Offset_I = mIndex.begin() + std::distance(mIndex.begin(),it_indx_ref);
-				//std::vector<T>::iterator Placement_Offset_D = mData.begin() + PlacementOfValue;
+  // starts with check of if index exist already, then checks if 'index' is lgerger than largest, then inserts in need be
+		assert(index <= sizeTot); // cant write outside scope of vector
 
-    		if ( PlacementOfValue == index ) // if iterator=index, write value to correfponding indexing in mData
-    		{
-    			mData[PlacementOfValue] = value;
-    		}
-    		else // if iterator > index, insert index at place before iterator in mIndex (same with mData and value)
-				{
-    			mIndex.insert(Placement_Offset_I, index);
-					//mData.insert(Placement_Offset_D, value);
-    			// sizeTot +=1;
-    		}
+		bool index_exist = std::binary_search(mIndex.begin(), mIndex.end(), index); // is there index value = to 'index' ?
 
-    	}
-    }
+		if (index_exist) // if 'index' IS in mIndex
+		{
+			std::vector<int>::iterator it_mI = std::lower_bound(mIndex.begin(), mIndex.end(), index); // *it_mI should = index, have indx_of_n
+			auto position = std::distance(mIndex.begin(), it_mI); // gives number of elements into mIndex where index is
+			std::vector<T>::iterator it_val = mData.begin() + position; // iterator for mData with same relative indentation as it_mI
+			*it_val = value; // writes value to indx_of_n in mData vector
+		}
+		else // if 'index' is not in mIndex
+		{
+			std::vector<int>::iterator last_index_val = mIndex.end();
 
-    else // if 'index' bigger than prev lagest index, add to end of lists
-    {
-      	mIndex.push_back(index);
-  	    mData.push_back(value);
-  	    //addSizeTotal();
-    }
-  }
+			if ( *last_index_val < index) // if 'index' is larger than largest/last mIndex value
+			{
+				// adds to the back
+				mIndex.push_back(index);
+				mData.push_back(value);
+			}
+			else // if 'index' is smaler than last mIndex value with no-match, it should be slottet in
+			{
+				std::vector<int>::iterator it_indset_below_index = std::upper_bound(mIndex.begin(), mIndex.end(), index); // iterator to insert below
+
+				auto indset_position_val = std::distance(mIndex.begin(), it_indset_below_index);
+				std::vector<T>::iterator it_indset_below_val = mData.begin() + indset_position_val;
+
+				it_indset_below_index = mIndex.insert(it_indset_below_index,index);
+				it_indset_below_val = mDdata.insert(it_indset_below_val,value);
+
+			}
+		}
+	}
 
 	//returns the value v_i of the vector. Returns 0 if the value is not stored
 	T getValue(unsigned int index)const
