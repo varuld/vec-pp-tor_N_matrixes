@@ -100,7 +100,7 @@ public:
 		{
 			std::vector<int>::iterator it_mI = std::lower_bound(mIndex.begin(), mIndex.end(), index); // *it_mI should = index, have indx_of_n
 			auto position = std::distance(mIndex.begin(), it_mI); // gives number of elements into mIndex where index is
-			std::vector<T>::iterator it_val = mData.begin() + position; // iterator for mData with same relative indentation as it_mI
+			typename std::vector<T>::iterator it_val = mData.begin() + position; // iterator for mData with same relative indentation as it_mI
 			*it_val = value; // writes value to indx_of_n in mData vector
 		}
 		else // if 'index' is not in mIndex
@@ -118,10 +118,10 @@ public:
 				std::vector<int>::iterator it_indset_below_index = std::upper_bound(mIndex.begin(), mIndex.end(), index); // iterator to insert below
 
 				auto indset_position_val = std::distance(mIndex.begin(), it_indset_below_index);
-				std::vector<T>::iterator it_indset_below_val = mData.begin() + indset_position_val;
+				typename std::vector<T>::iterator it_indset_below_val = mData.begin() + indset_position_val;
 
 				it_indset_below_index = mIndex.insert(it_indset_below_index,index);
-				it_indset_below_val = mDdata.insert(it_indset_below_val,value);
+				it_indset_below_val = mData.insert(it_indset_below_val,value);
 
 			}
 		}
