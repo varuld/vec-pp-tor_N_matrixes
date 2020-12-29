@@ -6,6 +6,17 @@
 #include <string>
 #include <utility>
 
+void testing(std::string msg)
+{
+  std::cout << "---" << '\n';
+  std::cout << msg << '\n';
+  std::cout << "---" << '\n';
+}
+
+void test_done()
+{
+  std::cout << "test done" << '\n';
+}
 
 void vec_test(Vector<double> v, double v1, double v2, double v3, std::string ss)
 {
@@ -101,6 +112,8 @@ void double_test(double exp, double act, std::string ss)
 
 void run_vec()
 {
+  testing("Testing Vector");
+//  std::cout << "Testing Vector" << '\n';
   Vector<double> a = Vector<double>(3);
   vec_test(a, 0,0,0,"exists test");
 
@@ -137,6 +150,8 @@ void run_vec()
   double_test(3,cn,"norm opr");
   a = -a;
   vec_test(a,-1,-1,-3,"unary opr");
+
+  test_done();
 }
 
 
@@ -159,6 +174,8 @@ void mx_test(Vector<double> v, double v1, double v2, double v3, std::string ss)
 
 void run_matrix()
 {
+  testing("Testing Matrix");
+//  std::cout << "Testing Matrix" << '\n';
   Matrix<double> m1 = Matrix<double>(2,2);
 
   double_test(m1(0,0), 0, "mx int");
@@ -195,6 +212,7 @@ void run_matrix()
   v2t(res, 2,9, "mvult1 opr");
   v2t(m_res,2,9, "m2 opr");
 
+  test_done();
 
 }
 
@@ -207,52 +225,99 @@ void diviede()
 {space();}
 void run_sp()
 {
+  testing("Testing SparseVector");
+//  std::cout << "Testing SparseVector" << '\n';
   SparseVector<double> sp0 = SparseVector<double>();
-  sp0.printsp();
-  SparseVector<double> sp1 = SparseVector<double>();
-  sp1.setValue(5,5.5);
-  sp1.printsp();
-//  sp0.getValue(0);
-  //sp_vec_test(sp0,0,0.0,0,0.0, "sp_vec exists");
-/*
-  SparseVector<int> sp1 = SparseVector<int>(1);
-  SparseVector<double> sp2 = SparseVector<double>(9);
-  sp2.setValue(2,2);
-  sp2.setValue(6, 3.1);
-  sp_vec_test(sp2, 2,2,6,3.1, "SparseVector test"); // sp_vec, indx, val, indx, val, string
-  sp2.printsp();
-  */
-  /*
-  space();
-  std::cout << "test getValue" << '\n';
-  space();
-  std::cout << sp2.getValue(6) << '\n';
-  std::cout << sp2.getValue(3) << '\n';
-  space();
-  std::cout << "testing getIndex" << '\n';
-  std::cout << sp2.getIndex(6) << '\n'; // should return 3
-  std::cout << sp2.getIndex(5) << '\n'; // should return -1
-  space();
-  std::cout << "test size and nonZeroes" << '\n';
-  std::cout <<  sp0.size() << std::endl;
-  std::cout << sp1.nonZeroes() << std::endl;
-  sp0.printsp();
-  sp1.printsp();
-  // test on vector with stuff in it
-  std::cout <<  sp2.size() << std::endl;
-  std::cout << sp2.nonZeroes() << std::endl;
-  std::cout << sp2.indexNonZero(1) << '\n';
-  std::cout << sp2.valueNonZero(1) << '\n';
-  space();
-  std::cout << "test copy contstructor" << '\n';
-  SparseVector<int> sp4 = SparseVector<int>(sp2); // testing copy constructor
+  SparseVector<double> lort = SparseVector<double>(10);
+
+  std::cout << "--- run_test1 ----" << '\n';
+
+  std::cout << lort.nonZeroes() << '\n';
+
+  //unsigned int sp0_size{ sp0.size() };
+  //unsigned int lort_size{ lort.size()};
+  //int_test(10, lort_size, "size of sp_vec 'lort'");
+  //int_test(0, sp0_size, "size of sp_vec 'sp0'");
+
+  std::cout << "add values" << '\n';
+
+  lort.setValue(5, 5.5);
+  lort.setValue(7, 10.1);
+
+  std::cout << "--- run_test2 ----" << '\n';
+
+  std::cout << "is? " << lort.getValue(5) << '\n';
+
+  lort.printsp();
+  std::cout << "make 2 new vecs, copy and new-new" << '\n';
+  SparseVector<double> sp3 = SparseVector<double>(lort);
+  SparseVector<double> sp4 = SparseVector<double>(15);
+
+  sp3.printsp();
   sp4.printsp();
-  space();
+
+  std::cout << "Sizes is; " << sp0.size() << "," << lort.size() << "," << sp3.size() << "," << sp4.size() << '\n';
+
+  std::cout << "Non-zeroes is ; " << sp0.nonZeroes() << "," << lort.nonZeroes() << "," << sp3.nonZeroes() << "," << sp4.nonZeroes() << '\n';
+
+  std::cout << "Index of first stored; " << lort.indexNonZero(0) << '\n';
+  std::cout << "Value of first stored; " << lort.valueNonZero(0) << '\n';
+
+  testing("+= opr's test");
+  sp4 += lort;
   sp4.printsp();
-  sp4 -= sp2;
-  sp4.printsp();
-  diviede();
-  */
+  testing("-= opr's test");
+  sp3.setValue(5,5.6);
+  sp3.printsp();
+  sp3 -= lort;
+  sp3.printsp();
+
+  testing("vec with neg val's");
+  SparseVector<double> sp_min = SparseVector<double>(10);
+  sp_min.setValue(2, -5.1);
+  sp_min.setValue(4, -1.0);
+  sp_min.printsp();
+  sp_min.setValue(2, 0.1);
+  sp_min.printsp();
+
+  testing("+ opr");
+  SparseVector<double> sp7 = sp0+lort;
+  sp7.printsp();
+  SparseVector<double> sp8 = sp4+sp3;
+  sp8.printsp();
+
+  testing("- opr");
+  SparseVector<int> v0 = SparseVector<int>(10);
+  v0.setValue(1,1);
+  v0.setValue(3,5);
+  v0.printsp();
+  SparseVector<int> v1 = SparseVector<int>(11);
+  v1.setValue(1,1);
+  v1.setValue(4,5);
+  v1.setValue(8,6);
+  v1.printsp();
+
+  SparseVector<int> v2 = v1-v0;
+  v2.printsp();
+
+  test_done();
+}
+
+void run_SPVec_Matrix()
+{
+  testing("vector times matrix opr's");
+  Matrix<double> m1 = Matrix<double>(2,2);
+  m1(0,0) = 1;  m1(0,1) = 2; m1(1,0) = 3; m1(1,1) = 4;
+  SparseVector<double> spv1 = SparseVector<double>(10);
+  spv1.setValue(1,5.0);
+  spv1.setValue(3,4.5);
+  spv1.setValue(7,7.5);
+  Vector<double> Mx_Spv_pro = m1*spv1;
+  //print_Vector(Mx_Spv_pro);
+  Vector<double> Spv_Mx_pro = m1*spv1;
+  //print_Vector(Spv_Mx_pro);
+
+  test_done();
 }
 
 int main()
@@ -260,6 +325,8 @@ int main()
   run_vec();
   run_matrix();
   run_sp();
+
+  run_SPVec_Matrix();
 
   //int_test()
   //run_vec();
