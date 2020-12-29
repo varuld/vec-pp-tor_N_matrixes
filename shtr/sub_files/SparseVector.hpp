@@ -22,7 +22,7 @@ private:
 	//Vector<int> mIndex;
 	std::vector<int> mIndex{0}; // index array
 	//Vector<T> mData;
-	std::vector<T> mData; // value array
+	std::vector<T> mData{0}; // value array
 
 public:
 	//creates an empty vector of dimensionality 0.
@@ -42,6 +42,7 @@ public:
 	}
 
 	//copy constructor, needed for SparseVector<T> operator+, set z=x
+	/*
 	SparseVector(const SparseVector<T>& otherSP_vec)
 	{
 
@@ -60,6 +61,7 @@ public:
 			mIndex[i] = otherSP_vec.mIndex[i];
 		}
 	}
+	*/
 
 
 	// assignment operators and copy constructor should be automatically
@@ -73,7 +75,7 @@ public:
 		{
 			std::cout << "Vector is dim 0" << '\n';
 		}
-		else if (mData.size() == 0)
+		else if (mIndex[0] == 0 && mData[0] == 0)
 		{
 			std::cout << "Vector has no non-zero elements" << '\n';
 		}
@@ -81,53 +83,78 @@ public:
 		{
 			std::cout << "The vector has size =" << sizeTot << '\n';
 			std::cout << "The nonzero elements at index is: " << '\n';
-			for (int i =0; i< mData.size(); i++)
+			for (auto i =0; i< mIndex.size(); ++i)
 			{
-				std::cout << "[" << mIndex[i] << "," << mData[i] << "]" << '\n';
+				if (i != mIndex.front()) std::cout << ",";
+				std::cout << mIndex[i];
 			}
+			std::cout << "\t" << std::endl;
+			for (auto j =0; j < mData.size(); ++j)
+			{
+				if (j != mData.back()) {std::cout << ",";}
+				std::cout << mData[j];
+			}
+			std::cout << "\t" << std::endl;
 		}
 	}
 
 	void setValue(unsigned int index, T value) // set or add value at given index
   {
-  // starts chech from back of vector, then if index exist already, then insert values
-	assert(index <= sizeTot); // cant write outside scope of vector
-	int lenght_of_mIndex = std::distance(mIndex.begin(), mIndex.end() );
-    if (index <= lenght_of_mIndex ) // is index last vlue in mIndex vector?
-    {
-      if ( lenght_of_mIndex == index)
-  	  {
-  			mData[index] = value;
-  	  }
 
-    	else // find iterator that is or is hihger than 'index'
-    	{
-    		auto it_indx_ref = std::lower_bound(mIndex.begin(), mIndex.end(), index); // iterator to mIndex[index] with eq. or lower 'val' than index
-				int PlacementOfValue = std::distance(mIndex.begin(),it_indx_ref);
-				std::vector<T>::iterator Placement_Offset_I = mIndex.begin() + std::distance(mIndex.begin(),it_indx_ref);
-				//std::vector<T>::iterator Placement_Offset_D = mData.begin() + PlacementOfValue;
+  // starts with check of if index exist already, then checks if 'index' is lgerger than largest, then inserts in need be
+		assert(index <= sizeTot); // cant write outside scope of vector
 
-    		if ( PlacementOfValue == index ) // if iterator=index, write value to correfponding indexing in mData
-    		{
-    			mData[PlacementOfValue] = value;
-    		}
-    		else // if iterator > index, insert index at place before iterator in mIndex (same with mData and value)
+		//std::cout << "size check good" << mData.size() << '\n';
+
+		// std::cout << mData[0] << '\n';
+
+		bool empty_vec = (mData[0] == 0); // check if vector is empty, if-so make it size of one
+
+		if (empty_vec)
+		{
+			//std::cout << "empty no-more" << '\n';
+			mIndex.at(0) = index;
+			mData.at(0) = value;
+		}
+		else
+		{
+
+			//std::cout << "add to non-empty vector" << '\n';
+			bool index_exist = std::binary_search(mIndex.begin(), mIndex.end(), index); // is there index value = to 'index' ?
+
+			if (index_exist) // if 'index' IS in mIndex
+			{
+				std::vector<int>::iterator it_mI = std::lower_bound(mIndex.begin(), mIndex.end(), index); // *it_mI should = index, have indx_of_n
+				// auto position = std::distance(mIndex.begin(), it_mI); // gives number of elements into mIndex where index is
+				int position = std::distance(mIndex.begin(), it_mI);
+				typename std::vector<T>::iterator it_val = mData.begin() + position; // iterator for mData with same relative indentation as it_mI
+				*it_val = value; // writes value to indx_of_n in mData vector
+			}
+			else // if 'index' is not in mIndex
+			{
+				std::vector<int>::iterator last_index_val = mIndex.end();
+				//int last_index_val {mIndex.back()};
+
+				if ( *last_index_val < index) // if 'index' is larger than largest/last mIndex value
 				{
-    			mIndex.insert(Placement_Offset_I, index);
-					//mData.insert(Placement_Offset_D, value);
-    			// sizeTot +=1;
-    		}
+					// adds to the back
+					mIndex.push_back(index);
+					mData.push_back(value);
+				}
+				else // if 'index' is smaler than last mIndex value with no-match, it should be slottet in
+				{
+					std::vector<int>::iterator it_indset_below_index = std::upper_bound(mIndex.begin(), mIndex.end(), index); // iterator to insert below
 
-    	}
-    }
+					auto indset_position_val = std::distance(mIndex.begin(), it_indset_below_index);
+					typename std::vector<T>::iterator it_indset_below_val = mData.begin() + indset_position_val;
 
-    else // if 'index' bigger than prev lagest index, add to end of lists
-    {
-      	mIndex.push_back(index);
-  	    mData.push_back(value);
-  	    //addSizeTotal();
-    }
-  }
+					it_indset_below_index = mIndex.insert(it_indset_below_index,index);
+					it_indset_below_val = mData.insert(it_indset_below_val,value);
+
+				}
+			}
+		}
+	}
 
 	//returns the value v_i of the vector. Returns 0 if the value is not stored
 	T getValue(unsigned int index)const
@@ -141,9 +168,11 @@ public:
 		if  (index_exists)
 		{
 			auto it_val_indx { std::lower_bound(mIndex.begin(), mIndex.end(), index) };
+			//std::vector<int>::iterator it_val_indx = std::lower_bound(mIndex.begin(), mIndex.end(), index);
 			int PlacementOfValue = std::distance(mIndex.begin(), it_val_indx);
 
 			return mData[PlacementOfValue];
+			//return *it_val_indx;
 		}
 		else
 		{
@@ -152,9 +181,9 @@ public:
 			// return val;
 		}
 	}
-
+/*
 	// needed for SparseVector \times Matrix(dense) operations
-	int getIndex(int is_index_this) const
+	T getIndex(unsigned int is_index_this) const
 	{
 		bool indx_match{ binary_search(mIndex.begin(), mIndex.end(), is_index_this) };
 		auto it_indx{ std::lower_bound(mIndex.begin(), mIndex.end(), is_index_this) };
@@ -167,19 +196,29 @@ public:
 		}
 		else
 		{
-			return 0;
+			return -1;
 		}
 
-		// ikke findes; then return -1
+		// findes ikke; then return -1
 	}
 
-
+*/
 
 	//returns the dimensionality of the vector
 	unsigned int size() const {return sizeTot;}
 
 	// returns the number stored elements
-	unsigned int nonZeroes() const {return mData.size();}
+	unsigned int nonZeroes() const
+	{
+		if (mIndex[0] == 0 && mData[0] == 0)
+		{
+			return 0;
+		}
+		else
+		{
+			return mData.size();
+		}
+	}
 
 	//returns the index of the ith stored nonzero entry (in increasing order)
 	unsigned int indexNonZero(unsigned int i)const
@@ -242,7 +281,7 @@ public:
 			}
 
 			}
-			// return *this;
+			return *this;
 		}
 
 	//subtracts x from the current vector
@@ -283,43 +322,71 @@ public:
 				setValue(x_idx, valNew);
 			}
 		}
+		return *this;
 	}
 };
 
-/*
+
 // computes z= x+y, equivalent to z=x, z+=y
 template<class T>
 SparseVector<T> operator+(SparseVector<T> const& x, SparseVector<T> const& y)
 {
-	SparseVector<T> z = SparseVector<T> (x);
+	SparseVector<T> z = SparseVector<T>(x);
 	z += y;
-
 	return z;
 }
-
 // computes z= x-y, equivalent to z=x, z-=y
 template<class T>
 SparseVector<T> operator-(SparseVector<T> const& x, SparseVector<T> const& y)
 {
 	SparseVector<T> z = SparseVector<T>(x);
 	z -= y;
-
 	return z;
 };
-
-
 // computes the matrix-vector product of a dense matrix and sparse vector z=Ax.
 // The result is a dense vector.
 template<class T>
 Vector<T> operator* (Matrix<T> const& A, SparseVector<T> const& x)
 {
-	int vec_len = x.sizeTot;
+	int len_z{ A.GetNumberOfColumns() };
+	int elmt_add_to_vector_entrance { A.GetNumberOfRows() };
+
+	assert( len_z == x.size());
+
+	Vector<T> z = Vector<T>(len_z);
+
+	unsigned int num_val_x { x.nonZeroes() };
+	// go throgh all nonzero entries of x and compare it's index
+	// with indentation of A
+	//
+	// if x_i and A_i match mult the values
+	// & add (+=) to sum of z_i
+	for (unsigned int i{0}; i < num_val_x ; ++i) // go throgh all nonzero entries of x
+	{
+		unsigned int val_indx = x.indexNonZero(i);
+		for (int k = 0; k < elmt_add_to_vector_entrance; ++k) // goes
+		{
+			if (k != val_indx)
+			{break;}
+			else
+			{
+				for (int l = 0; l < len_z; ++l)
+				{
+					T sum = A(l,k) * x.valueNonZero(i);
+					//sum += z[l];
+					z[l] += sum;
+					//z.insert(l,sum);
+				}
+			}
+		}
+	}
+	return z;
+	/*
+	int vec_len = x.size();
 	int matrix_len = A.GetNumberOfColumns();
 	assert(matrix_len == vec_len);
-
 	int len_z = A.GetNumberOfRows();
 	Vector<T> z = Vector<T> (len_z);
-
 	for (int i = 0; i < vec_len; i++)
 	{
 		if (x.getIndex(i) == -1)
@@ -335,20 +402,48 @@ Vector<T> operator* (Matrix<T> const& A, SparseVector<T> const& x)
 		}
 	}
 	return z;
+	*/
 };
-
 // computes the matrix-vector product of a dense matrix and sparse vector z=x^TA.
 // The result is a dense vector.
 template<class T>
 Vector<T> operator* (SparseVector<T> const& x, Matrix<T> const& A)
 {
-	int len_vec = x.sizeTot;
+
+	unsigned int num_val_x { x.nonZeroes() };
+
+	// unsigned int len_vec {x.size()};
+	int A_cols {A.GetNumberOfColumns()};
+	int A_rows {A.GetNumberOfRows()};
+
+	Vector<T> z = Vector<T>(A_cols);
+
+	for (unsigned int i = 0; i < num_val_x; ++i)
+	{
+		for (unsigned int k = 0; k < A_cols; ++k)
+		{
+			if (k != num_val_x)
+			{break;}
+			else
+			{
+				T sum;
+				for (unsigned int l = 0; l < A_rows; ++l)
+				{
+					sum += x.valueNonZero(i) * A(l,k);
+				}
+				z.insert(k,sum);
+			}
+		}
+	}
+
+	return z;
+
+	/*
+	int len_vec = x.size();
 	int mat_len = A.GetNumberOfRows();
 	assert(len_vec == mat_len);
-
 	int len_z = A.GetNumberOfColumns();
 	Vector<T> z = Vector<T> (len_z);
-
 	for (int i =0; i < len_vec;i++)
 	{
 		if (x.getIndex(i) == -1)
@@ -358,14 +453,14 @@ Vector<T> operator* (SparseVector<T> const& x, Matrix<T> const& A)
 		T sum;
 			for (int j=0; j < mat_len ; j++)
 			{
-				sum += x.mData[i] * A(j,i);
+				sum += x.mData[i] * A(j,i); // cant bq, cant access private SparseVector members
 			}
 		z.insert(i, sum);
 		}
 	}
 	return z;
-
+	*/
 };
-*/
+
 
 #endif
