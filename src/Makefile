@@ -1,5 +1,5 @@
-CC := clang++-10 #g++ 
-CFLAGS := -g -Wall -MMD -MP -Weffc++ #-Wextra -Wsign-conversion -Werror
+CC := clang++-10 #g++
+CFLAGS := -g -std=c++11 -Wall -MMD -MP # -Weffc++ -Wextra #  -Werror  -Wsign-conversion
 
 TARGET := main
 

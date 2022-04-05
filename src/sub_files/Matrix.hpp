@@ -1,6 +1,8 @@
 #ifndef MATRIXHEADERDEF
 #define MATRIXHEADERDEF
-#include "vector.hpp"
+#include "Vector.hpp"
+#include <iostream>
+#include <vector>
 
 template<typename T>
 class Matrix
@@ -8,7 +10,8 @@ class Matrix
 private:
   // uses 1 vector to store all info in a list
 	std::vector<T> mData;
-	int nRows; int nCols;
+	int nRows;
+	int nCols;
 	int size;
 	//std::vector<Vector<T>> mData; // vector of vectors
 	//T** mData; // entries of matrix
@@ -18,13 +21,13 @@ private:
 	// Vector<Vector<T>> mData; // with own Vector struc inside own Vector  struc
 
 public:
-
 	// own refac matrix constructor
 	Matrix(int numRows, int numCols)
 	{
 		nRows = numRows;
 		nCols = numCols;
 		size = numRows*numCols;
+		//size = (numRows * numCols) + numCols;
 	  mData = std::vector<T> (size);
 
 	  // mData = rows(cols);
@@ -34,15 +37,15 @@ public:
 
 	// copy constructor
 	Matrix(const Matrix<T>& otherMatrix)
-    {
-				mData = (otherMatrix.getStorage());
+  {
+		nRows = otherMatrix.nRows;
+		nCols = otherMatrix.nCols;
+		size = otherMatrix.size;
+		std::cout << "copy constructor" << '\n';
+		mData = ( otherMatrix.getStorage() );
+		//mData = otherMatrix.mData;
 
-        /*for (int i = 0; i < otherMatrix.GetIndex(); i++)
-        {
-				std::vector<T>
-            mData[i] = otherMatrix.mData[i];
-        }*/
-    }
+  }
 
 
 
@@ -58,128 +61,145 @@ public:
 
 	int GetIndex(int rows, int cols) const
 	{
-		return 2*(cols+rows);
+		//return 2*(cols+rows);
+		int m = GetNumberOfColumns(); //int indx = (rows * m) + cols;
+		return (rows * m) + cols;
 	}
 	int GetSize() const
 	{
 		return size;
 	}
 	int GetNumberOfRows() const
-    {
-        return nRows;
-    }
+  {
+    return nRows;
+  }
 
 	int GetNumberOfColumns() const
-    {
-        return nCols;
-    }
+  {
+    return nCols;
+  }
 
 	T& operator()(int i, int j) // read-write opr
-    {
-        assert(i >= 0);
-        assert(i < nRows);
-        assert(j >= 0);
-        assert(j < nCols);
-
-				int idx = GetIndex(i,j);
-				return mData[idx];
-    }
+  {
+    assert(i >= 0);
+    assert(i < nRows);
+    assert(j >= 0);
+    assert(j < nCols);
+		//int idx = GetIndex(i,j); // int idx = (rows * m) + cols;
+		//return mData[idx];
+		return mData[(i * nCols) + j];
+  }
 
 	T const& operator()(int i, int j) const // retrieve non-write opr
-    {
-        assert(i >= 0);
-        assert(i < nRows);
-        assert(j >= 0);
-        assert(j < nCols);
-
-				int idx = GetIndex(i,j);
-				return mData[idx];
-    }
+  {
+    assert(i >= 0);
+    assert(i < nRows);
+    assert(j >= 0);
+    assert(j < nCols);
+		//int idx = GetIndex(i,j);
+		//return mData[GetIndex(i,j)];
+		return mData[(i * nCols) + j];
+  }
 
 	// overloaded assignment operator
 	Matrix<T>& operator=(const Matrix<T>& otherMatrix)
-    {
-				int mNumRows = GetNumberOfRows();
-				int mNumCols = GetNumberOfColumns();
-        assert(mNumRows == otherMatrix.GetNumberOfRows());
-        assert(mNumCols == otherMatrix.GetNumberOfColumns());
+  {
+		std::cout << "assign opr" << '\n';
+		int mNumRows = GetNumberOfRows();
+		int mNumCols = GetNumberOfColumns();
 
-        for (int i = 0; i < mNumRows; i++)
-        {
-            for (int j = 0; j < mNumCols; j++)
-            {
-                mData[i][j] = otherMatrix.mData[i][j];
-            }
-        }
-        return *this;
-    }
+    assert(mNumRows == otherMatrix.GetNumberOfRows());
+    assert(mNumCols == otherMatrix.GetNumberOfColumns());
+
+		int sezz = otherMatrix.GetSize();
+		for (int i = 0; i < sezz; ++i)
+		{
+			mData[i] = otherMatrix.mData[i];
+		}
+    return *this;
+  }
 
 	Matrix<T> operator-() const // unary -
+  {
+		Matrix<T> mat(nRows, nCols);
+		for (int i = 0; i < nRows; i++)
     {
-				Matrix<T> mat(nRows, nCols);
-				for (int i = 0; i < nRows; i++)
-        {
-					for (int j = 0; j < nCols ; j++)
-					{
-						mat(i,j) = -mData[GetIndex(i,j)];
-					}
-        }
-        return mat;
-
+			for (int j = 0; j < nCols ; j++)
+			{
+				mat(i,j) = -mData[GetIndex(i,j)];
+			}
     }
+    return mat;
+
+  }
 		// overloading the binary + operator
 	Matrix<T> operator+(const Matrix<T>& m1) const
+  {
+    assert(GetSize() == m1.GetSize());
+    Matrix<T> mat(nRows, nCols);
+    for (int i = 0; i < nRows; i++)
     {
-        assert(GetSize() != m1.GetSize());
-
-        Matrix<T> mat(nRows, nCols);
-
-        for (int i = 0; i < nRows; i++)
-        {
-					for (int j = 0; j < nCols ; j++)
-					{
-						mat(i,j) = mData[GetIndex(i,j)] - m1(i,j);
-					}
-        }
-        return mat;
+			for (int j = 0; j < nCols ; j++)
+			{
+				mat(i,j) = mData[GetIndex(i,j)] - m1(i,j);
+			}
     }
+    return mat;
+  }
 
 		// overloading the binary - operator
 	Matrix<T> operator-(const Matrix<T>& m1) const
+	{
+
+		assert(GetNumberOfRows() == m1.GetNumberOfRows());
+		assert(GetNumberOfColumns() == m1.GetNumberOfColumns());
+
+		Matrix<T> md(nRows, nCols);
+		for (int i = 0; i < nRows;i++ )
 		{
-
-				assert(GetNumberOfRows() != m1.GetNumberOfRows());
-				assert(GetNumberOfColumns() != m1.GetNumberOfColumns());
-
-				Matrix<T> md(nRows, nCols);
-				for (int i = 0; i < nRows;i++ )
-				{
-					for (int j = 0; j < nCols ; j++)
-					{
-						md(i,j) = mData[GetIndex(i,j)] - m1(i,j);
-					}
-				}
-				return md;
+			for (int j = 0; j < nCols ; j++)
+			{
+				md(i,j) = mData[GetIndex(i,j)] - m1(i,j);
+			}
 		}
+		return md;
+	}
 
 	// scalar multiplication
 	Matrix<T> operator*(T a) const
-	    {
-	        Matrix<T> mat(nRows, nCols);
-	        for (int i = 0; i < nRows; i++)
-	        {
-						for (int j = 0; j < nCols ; j++)
-						{
-							mat(i,j) = a*mData[GetIndex(i,j)];
-						}
-	        }
-	        return mat;
-	    }
+	{
+	  Matrix<T> mat(nRows, nCols);
+	  for (int i = 0; i < nRows; i++)
+	  {
+			for (int j = 0; j < nCols ; j++)
+			{
+				mat(i,j) = a*mData[GetIndex(i,j)];
+			}
+	  }
+	  return mat;
+	 }
 
-		std::vector<T> const& getStorage() const
+	std::vector<T> const& getStorage() const
+	{
+		return mData;
+	}
+	void prt_mx() const
+	{
+		int mx_rows = nRows;
+		int mx_cols = nCols;
+		for (int r = 0; r < mx_rows; ++r)
 		{
-			return mData;
+			for (int c = 0; c < mx_cols; ++c)
+			{
+				std::cout << mData[GetIndex(r, c)];
+				if (c < (mx_cols - 1))
+				{
+					std::cout << ',';
+				}
+			}
+			std::cout << '\n';
 		}
+	}
 }; // class Matrix
 
 
@@ -187,7 +207,7 @@ public:
 template<typename T>
 Vector<T> operator*(const Matrix<T>& m, const Vector<T>& v)
 {
-    int original_vector_size = v.size();
+  int original_vector_size = v.size();
 	assert(m.GetNumberOfColumns() == original_vector_size);
 
 	int new_vector_length = m.GetNumberOfRows();

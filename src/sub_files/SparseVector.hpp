@@ -7,8 +7,9 @@
 #include <algorithm>
 #include <utility>
 #include <iostream>
+#include <typeinfo>
 
-#include "vector.hpp"
+#include "Vector.hpp"
 #include "Matrix.hpp"
 
 template<class T>
@@ -20,7 +21,7 @@ private:
 	unsigned int sizeTot{0}; // total size of vector
 //	Vector<T> mData;
 	//Vector<int> mIndex;
-	std::vector<int> mIndex{0}; // index array
+	std::vector<unsigned int> mIndex{0}; // index array MUST BE SORTED
 	//Vector<T> mData;
 	std::vector<T> mData{0}; // value array
 
@@ -81,17 +82,20 @@ public:
 		}
 		else
 		{
-			std::cout << "The vector has size =" << sizeTot << '\n';
+			std::cout << "The vector has size =" << sizeTot << ", ie " << sizeTot+1 << " entries"<< '\n';
 			std::cout << "The nonzero elements at index is: " << '\n';
-			for (auto i =0; i< mIndex.size(); ++i)
+			for (int i = 0; i< mIndex.size(); ++i)
 			{
-				if (i != mIndex.front()) std::cout << ",";
+				if (i != mIndex[0])
+				{
+					std::cout << ",";
+				}
 				std::cout << mIndex[i];
 			}
 			std::cout << "\t" << std::endl;
-			for (auto j =0; j < mData.size(); ++j)
+			for ( int j =0; j < mData.size(); ++j)
 			{
-				if (j != mData.back()) {std::cout << ",";}
+				if (j != mData[mData.size()]) {std::cout << ",";}
 				std::cout << mData[j];
 			}
 			std::cout << "\t" << std::endl;
@@ -113,18 +117,20 @@ public:
 		if (empty_vec)
 		{
 			//std::cout << "empty no-more" << '\n';
-			mIndex.at(0) = index;
-			mData.at(0) = value;
+			//mIndex.at(0) = index;
+			//mData.at(0) = value;
+			mIndex[0] = index;
+			mData[0] = value;
+
 		}
 		else
 		{
-
 			//std::cout << "add to non-empty vector" << '\n';
 			bool index_exist = std::binary_search(mIndex.begin(), mIndex.end(), index); // is there index value = to 'index' ?
 
 			if (index_exist) // if 'index' IS in mIndex
 			{
-				std::vector<int>::iterator it_mI = std::lower_bound(mIndex.begin(), mIndex.end(), index); // *it_mI should = index, have indx_of_n
+				std::vector<unsigned int>::iterator it_mI = std::lower_bound(mIndex.begin(), mIndex.end(), index); // *it_mI should = index, have indx_of_n
 				// auto position = std::distance(mIndex.begin(), it_mI); // gives number of elements into mIndex where index is
 				int position = std::distance(mIndex.begin(), it_mI);
 				typename std::vector<T>::iterator it_val = mData.begin() + position; // iterator for mData with same relative indentation as it_mI
@@ -132,20 +138,24 @@ public:
 			}
 			else // if 'index' is not in mIndex
 			{
-				std::vector<int>::iterator last_index_val = mIndex.end();
-				//int last_index_val {mIndex.back()};
-
-				if ( *last_index_val < index) // if 'index' is larger than largest/last mIndex value
+				int highest_index = mIndex.back(); // ref to last val in index vector
+				if (index > highest_index) // check if 'index' is inside val-scope of current mIndex
 				{
-					// adds to the back
 					mIndex.push_back(index);
 					mData.push_back(value);
 				}
 				else // if 'index' is smaler than last mIndex value with no-match, it should be slottet in
 				{
-					std::vector<int>::iterator it_indset_below_index = std::upper_bound(mIndex.begin(), mIndex.end(), index); // iterator to insert below
+					/*
+					std::vector<int>::iterator it_indset_above_index = std::lower_bound(mIndex.begin(), mIndex.end(), index); // iterator to insert below +1 ;
+					std::vector<int>::const_iterator indset_position_val = std::distance(mIndex.begin(), it_indset_above_index);
 
-					auto indset_position_val = std::distance(mIndex.begin(), it_indset_below_index);
+					mIndex.insert(position, val_indx);
+					mData.insert(position, val_dat);
+					*/
+					std::vector<unsigned int>::iterator it_indset_below_index = std::upper_bound(mIndex.begin(), mIndex.end(), index); // iterator to insert below +1 ;
+
+					int indset_position_val = std::distance(mIndex.begin(), it_indset_below_index);
 					typename std::vector<T>::iterator it_indset_below_val = mData.begin() + indset_position_val;
 
 					it_indset_below_index = mIndex.insert(it_indset_below_index,index);
@@ -167,8 +177,9 @@ public:
 		// which gives right value bq we know index exixts
 		if  (index_exists)
 		{
-			auto it_val_indx { std::lower_bound(mIndex.begin(), mIndex.end(), index) };
-			//std::vector<int>::iterator it_val_indx = std::lower_bound(mIndex.begin(), mIndex.end(), index);
+			//auto it_val_indx { std::lower_bound(mIndex.begin(), mIndex.end(), index) };
+			std::vector<unsigned int>::const_iterator it_val_indx = std::lower_bound(mIndex.begin(), mIndex.end(), index);
+			//std::cout << typeid(it_val_indx).name() << std::endl;
 			int PlacementOfValue = std::distance(mIndex.begin(), it_val_indx);
 
 			return mData[PlacementOfValue];
@@ -223,8 +234,9 @@ public:
 	//returns the index of the ith stored nonzero entry (in increasing order)
 	unsigned int indexNonZero(unsigned int i)const
 	{
-		unsigned int idx = mIndex[i];
-		return idx;
+		//unsigned int idx = mIndex[i];
+		//return idx;
+		return mIndex[i];
 	}
 
 	//returns the value of the ith stored nonzero entry (in increasing order)
@@ -241,86 +253,77 @@ public:
 	// for addding 2 sparse vectors together
 	SparseVector<T>& operator+= (SparseVector<T> const& x)
 	{
-		if (sizeTot < x.sizeTot)
+		assert(sizeTot == x.sizeTot);
+
+		std::vector<unsigned int> OverlapOfIndex = mIndex;
+		// adding the two indexies together
+		for (int i = 0; i < x.nonZeroes(); i++)
 		{
-			sizeTot = x.sizeTot;
+			OverlapOfIndex.push_back(x.mIndex[i]);
 		}
-		int len_x = x.nonZeroes();
+		// sorting the combined index values
+		std::sort(OverlapOfIndex.begin(), OverlapOfIndex.end());
+		// deleting the non-unique index values
 
-		// for all elements in x.vector, find lowest index match in org.vector
-		//
-		for  (int i = 0 ; i < len_x ; ++i)
+		// HOW DOES THIS WORK
+		// deleting the non-unique index values
+		//auto last = std::unique(OverlapOfIndex.begin(), OverlapOfIndex.end() );
+		std::vector<unsigned int>::const_iterator last = std::unique(OverlapOfIndex.begin(), OverlapOfIndex.end() );
+		//std::cout << typeid(last).name() << std::endl;
+		// deleting the non-unique index values
+		OverlapOfIndex.erase(last, OverlapOfIndex.end());
+		// and yielding list of all the indexies for both vectors
+
+		// number of total indexies to loop over
+		int NumOfSumValues = OverlapOfIndex.size();
+
+		for (int i = 0 ; i < NumOfSumValues ; ++i)
 		{
-			// checks if x' ith index exists in c_v
-			int x_indx{ x.mIndex[i] };
-			bool indx_findes = std::binary_search(mIndex.begin(), mIndex.end(), x_indx);
+			// find if index n are shared or not
+			unsigned int OverlapIndx = OverlapOfIndex[i];
+			//bool indx_findes = std::binary_search(mIndex.begin(), mIndex.end(), OverlapIndx);
 
-			// auto idx_exixts = std::lower_bound(mIndex.begin(), mIndex.end(), x.mIndex[i]);
-
-			// bool checks if, given pointer to end of org.vector, it's a match
-			// bool no_match = (idx_exixts == mIndex.end() && *idx_exixts != x.mIndex[i]);
-
-			// given a match, add the values of the matching idx's
-			// and writes to org.vector
-			if (indx_findes)
-			{
-				auto  it_indexOfIndexMatch{ std::lower_bound(mIndex.begin(), mIndex.end(), x_indx) };
-				int PlacementOfValue = std::distance(mIndex.begin(),it_indexOfIndexMatch);
-
-				T valueNew{ mData[PlacementOfValue] + x.mData[i] };
-				setValue(PlacementOfValue, valueNew);
-			}
-
-			//if (std::find(mIndex.begin(),mIndex.end(), x.mIndex[i]) != mIndex.end())
-
-			else // for non-match
-			{
-				int x_idx{ x.mIndex[i] };
-				T valNew{x.mData[i]};
-				setValue(x_idx, valNew);
-			}
-
-			}
-			return *this;
+			T orgVecVal = getValue(OverlapIndx);
+			T addVecVal = x.getValue(OverlapIndx);
+			T valueNew = orgVecVal + addVecVal;
+			setValue(OverlapIndx, valueNew);
 		}
+
+		return *this;
+	}
 
 	//subtracts x from the current vector
 	// for subtrting 2 sparse vectors from each other
+
 	SparseVector<T>& operator-= (SparseVector<T> const& x)
 	{
+		assert(sizeTot == x.sizeTot);
 
-		if (sizeTot < x.sizeTot)
+		std::vector<unsigned int> OverlapOfIndex = mIndex;
+		// adding the two indexies together
+		for (int i = 0; i < x.nonZeroes(); i++)
 		{
-			sizeTot = x.sizeTot;
+			OverlapOfIndex.push_back(x.mIndex[i]);
 		}
-		int len_x = x.nonZeroes();
-
-	// for all elements in x.vector, find lowest index match in org.vector
-	//
-		for  (int i = 0 ; i < len_x ; ++i)
+		// sorting the combined index values
+		std::sort(OverlapOfIndex.begin(), OverlapOfIndex.end());
+		// deleting the non-unique index values
+		std::vector<unsigned int>::const_iterator last = std::unique(OverlapOfIndex.begin(), OverlapOfIndex.end() );
+		// deleting the non-unique index values
+		OverlapOfIndex.erase(last, OverlapOfIndex.end());
+		// and yielding list of all the indexies for both vectors
+		// number of total indexies to loop over
+		int NumOfSumValues = OverlapOfIndex.size();
+		for (int i = 0 ; i < NumOfSumValues ; ++i)
 		{
-			// checks if x' ith index exists in c_v
-			int x_indx{ x.mIndex[i] };
-			bool indx_findes = std::binary_search(mIndex.begin(), mIndex.end(), x_indx);
+			// find if index n are shared or not
+			unsigned int OverlapIndx = OverlapOfIndex[i];
+			//bool indx_findes = std::binary_search(mIndex.begin(), mIndex.end(), OverlapIndx);
 
-			// given a match, add the values of the matching idx's
-			// and writes to org.vector
-			if (indx_findes)
-			{
-				auto it_indexOfIndexMatch{ std::lower_bound(mIndex.begin(), mIndex.end(), x_indx) };
-				int PlacementOfValue = std::distance(mIndex.begin(), it_indexOfIndexMatch);
-				T valueNew{ mData[PlacementOfValue] - x.mData[i] };
-				setValue(PlacementOfValue, valueNew);
-			}
-
-			//if (std::find(mIndex.begin(),mIndex.end(), x.mIndex[i]) != mIndex.end())
-
-			else // for non-match
-			{
-				int x_idx{ x.mIndex[i] };
-				T valNew{ -x.mData[i] };
-				setValue(x_idx, valNew);
-			}
+			T orgVecVal = getValue(OverlapIndx);
+			T addVecVal = x.getValue(OverlapIndx);
+			T valueNew = orgVecVal - addVecVal;
+			setValue(OverlapIndx, valueNew);
 		}
 		return *this;
 	}
@@ -348,29 +351,33 @@ SparseVector<T> operator-(SparseVector<T> const& x, SparseVector<T> const& y)
 template<class T>
 Vector<T> operator* (Matrix<T> const& A, SparseVector<T> const& x)
 {
-	int len_z{ A.GetNumberOfColumns() };
-	int elmt_add_to_vector_entrance { A.GetNumberOfRows() };
+	// mult between spvec and rows of matrix
+	int A_cols = A.GetNumberOfColumns(); //len_z{ A.GetNumberOfColumns() };
+	int A_rows =  A.GetNumberOfRows(); //elmt_add_to_vector_entrance { A.GetNumberOfRows() };
 
-	assert( len_z == x.size());
+	int SparseVectorSize = x.size() +1; // plus bc of zero indexing
 
-	Vector<T> z = Vector<T>(len_z);
+	assert( A_rows == SparseVectorSize);
 
-	unsigned int num_val_x { x.nonZeroes() };
+	Vector<T> z = Vector<T>(A_rows);
+
+	//int num_val_x { static_cast<int>( x.nonZeroes()) };
 	// go throgh all nonzero entries of x and compare it's index
 	// with indentation of A
 	//
 	// if x_i and A_i match mult the values
 	// & add (+=) to sum of z_i
-	for (unsigned int i{0}; i < num_val_x ; ++i) // go throgh all nonzero entries of x
+	/*
+	for (int i = 0; i < num_val_x ; ++i) //go throgh all nonzero entries of x
 	{
-		unsigned int val_indx = x.indexNonZero(i);
-		for (int k = 0; k < elmt_add_to_vector_entrance; ++k) // goes
+		int val_indx = x.indexNonZero(i);
+		for (int k = 0; k < A_cols; ++k) // goes
 		{
 			if (k != val_indx)
 			{break;}
 			else
 			{
-				for (int l = 0; l < len_z; ++l)
+				for (int l = 0; l < A_rows; ++l)
 				{
 					T sum = A(l,k) * x.valueNonZero(i);
 					//sum += z[l];
@@ -380,7 +387,17 @@ Vector<T> operator* (Matrix<T> const& A, SparseVector<T> const& x)
 			}
 		}
 	}
+	*/
+	for (int i = 0; i < A_rows; i++)
+	{
+		for (int j = 0; j < A_cols; j++)
+		{
+			// T SPVecVal = x.getValue(j);
+			z[i] += A(i,j)* x.getValue(j);
+		}
+	}
 	return z;
+};
 	/*
 	int vec_len = x.size();
 	int matrix_len = A.GetNumberOfColumns();
@@ -402,41 +419,41 @@ Vector<T> operator* (Matrix<T> const& A, SparseVector<T> const& x)
 		}
 	}
 	return z;
-	*/
+
 };
+*/
 // computes the matrix-vector product of a dense matrix and sparse vector z=x^TA.
 // The result is a dense vector.
 template<class T>
 Vector<T> operator* (SparseVector<T> const& x, Matrix<T> const& A)
 {
+	// mult between spvec and columns of matrix
 
-	unsigned int num_val_x { x.nonZeroes() };
+	//int num_val_x { static_cast<int>( x.nonZeroes()) };
+
+	int SparseVectorSize = x.size() +1; // plus bc of zero indexing
 
 	// unsigned int len_vec {x.size()};
 	int A_cols {A.GetNumberOfColumns()};
 	int A_rows {A.GetNumberOfRows()};
 
+	assert(A_cols == SparseVectorSize);
+
 	Vector<T> z = Vector<T>(A_cols);
 
-	for (unsigned int i = 0; i < num_val_x; ++i)
+	//for (int i = 0; i < num_val_x; ++i)
+	//{
+
+	for (int i = 0; i < A_cols; i++)
 	{
-		for (unsigned int k = 0; k < A_cols; ++k)
+		for (int j = 0; j < A_rows; j++)
 		{
-			if (k != num_val_x)
-			{break;}
-			else
-			{
-				T sum;
-				for (unsigned int l = 0; l < A_rows; ++l)
-				{
-					sum += x.valueNonZero(i) * A(l,k);
-				}
-				z.insert(k,sum);
-			}
+			// T SPVecVal = x.getValue(j);
+			z[i] += x.getValue(j) * A(j,i);
 		}
 	}
-
 	return z;
+};
 
 	/*
 	int len_vec = x.size();
@@ -459,8 +476,9 @@ Vector<T> operator* (SparseVector<T> const& x, Matrix<T> const& A)
 		}
 	}
 	return z;
-	*/
+
 };
+*/
 
 
 #endif
